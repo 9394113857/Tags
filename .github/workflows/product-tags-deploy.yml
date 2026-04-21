@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_tag:
-        description: "Create & push new tag to backend-auth-service?"
+        description: "Create & push new tag to backend-product-service?"
         required: true
         default: "no"
         type: choice
