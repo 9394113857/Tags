@@ -1,4 +1,5 @@
-name: 🚀 CROSS REPO TAG CREATOR (PRODUCT SERVICE)
+# name: 🚀 CROSS REPO TAG CREATOR (PRODUCT SERVICE)
+name: 🚀 PRODUCT TAG CREATOR
 
 on:
   workflow_dispatch:
