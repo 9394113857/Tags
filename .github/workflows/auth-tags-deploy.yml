@@ -1,54 +1,104 @@
-name: 🚀 AUTH SERVICE MANUAL DEPLOY
+name: 🚀 AUTH SERVICE RELEASE (COLAB STYLE)
 
 on:
   workflow_dispatch:
+    inputs:
+      confirm_tag:
+        description: "Create & push new tag?"
+        required: true
+        default: "no"
+        type: choice
+        options:
+          - "no"
+          - "yes"
+
+permissions:
+  contents: write
 
 jobs:
-  deploy:
+  release:
     runs-on: ubuntu-latest
 
     steps:
+      # ==========================================
+      # 📥 STEP 1: CHECKOUT
+      # ==========================================
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: 🕒 Start Logs
-        run: |
-          echo "======================================="
-          echo "🚀 MANUAL DEPLOY STARTED"
-          echo "⏰ Time: $(date)"
-          echo "📦 Repo: $GITHUB_REPOSITORY"
-          echo "======================================="
+      # ==========================================
+      # 🔄 STEP 2: FETCH TAGS
+      # ==========================================
+      - name: 🔄 Fetch Tags
+        run: git fetch --tags
 
-      - name: 📜 Commit Info
+      # ==========================================
+      # 🧠 STEP 3: GET + INCREMENT TAG (LIKE COLAB)
+      # ==========================================
+      - name: 🧠 Calculate Next Tag
+        id: tagger
         run: |
-          echo "Latest commit:"
-          git log -1
-          echo "======================================="
+          echo "Getting latest tag..."
 
-      - name: 🔧 Build Step
-        run: |
-          echo "======================================="
-          echo "🔧 BUILD START"
-          echo "Installing dependencies..."
-          sleep 2
-          echo "Building auth service..."
-          sleep 2
-          echo "BUILD SUCCESS ✅"
-          echo "======================================="
+          latest_tag=$(git tag --sort=-v:refname | head -n 1)
 
-      - name: 🚀 Deploy Step
-        run: |
-          echo "======================================="
-          echo "🚀 DEPLOYING AUTH SERVICE"
-          echo "Environment: manual production"
-          echo "Deploying..."
-          sleep 2
-          echo "DEPLOY SUCCESS 🎉"
-          echo "======================================="
+          if [ -z "$latest_tag" ]; then
+            echo "No tags found, defaulting to v1.0.0"
+            latest_tag="v1.0.0"
+          fi
 
-      - name: 📊 Final Logs
+          echo "Latest tag: $latest_tag"
+
+          version=${latest_tag#v}
+
+          IFS='.' read -r major minor patch <<< "$version"
+
+          # fallback safety
+          major=${major:-1}
+          minor=${minor:-0}
+          patch=${patch:-0}
+
+          patch=$((patch + 1))
+
+          new_tag="v$major.$minor.$patch"
+
+          echo "New tag: $new_tag"
+
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      # ==========================================
+      # ❌ STEP 4: SKIP IF NO
+      # ==========================================
+      - name: ❌ Cancel Tag Creation
+        if: ${{ github.event.inputs.confirm_tag != 'yes' }}
         run: |
-          echo "======================================="
-          echo "✅ MANUAL DEPLOY COMPLETE"
-          echo "🕒 Finished: $(date)"
-          echo "======================================="
+          echo "User selected NO ❌"
+          echo "Skipping tag creation..."
+
+      # ==========================================
+      # ✅ STEP 5: CREATE + PUSH TAG
+      # ==========================================
+      - name: 🏷️ Create & Push Tag
+        if: ${{ github.event.inputs.confirm_tag == 'yes' }}
+        run: |
+          echo "User confirmed YES ✅"
+
+          TAG=${{ steps.tagger.outputs.new_tag }}
+
+          echo "Creating tag: $TAG"
+
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git tag $TAG
+          git push origin $TAG
+
+          echo "🚀 Tag pushed successfully: $TAG"
+
+      # ==========================================
+      # 🚀 OPTIONAL DEPLOY
+      # ==========================================
+      - name: 🚀 Deploy
+        run: echo "Deploy step here..."
