@@ -1,10 +1,10 @@
-name: 🚀 AUTH SERVICE RELEASE (COLAB STYLE)
+name: 🚀 CROSS REPO TAG CREATOR (AUTH SERVICE)
 
 on:
   workflow_dispatch:
     inputs:
       confirm_tag:
-        description: "Create & push new tag?"
+        description: "Create & push new tag to backend-auth-service?"
         required: true
         default: "no"
         type: choice
@@ -21,21 +21,23 @@ jobs:
 
     steps:
       # ==========================================
-      # 📥 STEP 1: CHECKOUT
+      # 📥 CHECKOUT TARGET REPO (IMPORTANT)
       # ==========================================
-      - name: 📥 Checkout Code
+      - name: 📥 Checkout Auth Service Repo
         uses: actions/checkout@v4
         with:
+          repository: 9394113857/backend-auth-service
+          token: ${{ secrets.AUTH_TOKEN }}
           fetch-depth: 0
 
       # ==========================================
-      # 🔄 STEP 2: FETCH TAGS
+      # 🔄 FETCH TAGS
       # ==========================================
       - name: 🔄 Fetch Tags
         run: git fetch --tags
 
       # ==========================================
-      # 🧠 STEP 3: GET + INCREMENT TAG (LIKE COLAB)
+      # 🧠 CALCULATE NEXT TAG
       # ==========================================
       - name: 🧠 Calculate Next Tag
         id: tagger
@@ -55,7 +57,6 @@ jobs:
 
           IFS='.' read -r major minor patch <<< "$version"
 
-          # fallback safety
           major=${major:-1}
           minor=${minor:-0}
           patch=${patch:-0}
@@ -69,22 +70,26 @@ jobs:
           echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
 
       # ==========================================
-      # ❌ STEP 4: SKIP IF NO
+      # ❌ SKIP IF NO
       # ==========================================
-      - name: ❌ Cancel Tag Creation
+      - name: ❌ Skip Tag
         if: ${{ github.event.inputs.confirm_tag != 'yes' }}
-        run: |
-          echo "User selected NO ❌"
-          echo "Skipping tag creation..."
+        run: echo "User selected NO ❌ — skipping"
 
       # ==========================================
-      # ✅ STEP 5: CREATE + PUSH TAG
+      # 🔐 SET AUTH REMOTE (CRITICAL STEP)
+      # ==========================================
+      - name: 🔐 Set Authenticated Remote
+        if: ${{ github.event.inputs.confirm_tag == 'yes' }}
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.AUTH_TOKEN }}@github.com/9394113857/backend-auth-service.git
+
+      # ==========================================
+      # 🏷️ CREATE & PUSH TAG
       # ==========================================
       - name: 🏷️ Create & Push Tag
         if: ${{ github.event.inputs.confirm_tag == 'yes' }}
         run: |
-          echo "User confirmed YES ✅"
-
           TAG=${{ steps.tagger.outputs.new_tag }}
 
           echo "Creating tag: $TAG"
@@ -95,10 +100,4 @@ jobs:
           git tag $TAG
           git push origin $TAG
 
-          echo "🚀 Tag pushed successfully: $TAG"
-
-      # ==========================================
-      # 🚀 OPTIONAL DEPLOY
-      # ==========================================
-      - name: 🚀 Deploy
-        run: echo "Deploy step here..."
+          echo "✅ SUCCESS: $TAG pushed to backend-auth-service 🚀"
