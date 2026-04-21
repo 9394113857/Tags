@@ -1,0 +1,60 @@
+name: AUTH SERVICE TAG DEPLOYMENT
+
+on:
+  push:
+    tags:
+      - "v*"
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🏷️ TAG TRIGGER INFO
+        run: |
+          echo "======================================="
+          echo "🚀 AUTH SERVICE TAG DEPLOYMENT STARTED"
+          echo "⏰ Time: $(date)"
+          echo "🏷️ Trigger Tag: $GITHUB_REF_NAME"
+          echo "======================================="
+
+      - name: 📦 Repository Details
+        run: |
+          echo "Repo: $GITHUB_REPOSITORY"
+          echo "Commit Details:"
+          git log -1
+          echo "======================================="
+
+      - name: 🔧 Build Stage
+        run: |
+          echo "======================================="
+          echo "🔧 BUILD STARTED"
+          echo "Installing dependencies..."
+          sleep 2
+          echo "Compiling auth-service..."
+          sleep 2
+          echo "BUILD SUCCESS ✅"
+          echo "======================================="
+
+      - name: 🚀 Deployment Stage
+        run: |
+          echo "======================================="
+          echo "🚀 DEPLOYING AUTH SERVICE"
+          echo "Version: $GITHUB_REF_NAME"
+          echo "Environment: production"
+          echo "Deploying..."
+          sleep 2
+          echo "DEPLOY SUCCESS 🎉"
+          echo "======================================="
+
+      - name: 📊 Final Status Logs
+        run: |
+          echo "======================================="
+          echo "✅ AUTH SERVICE DEPLOY COMPLETE"
+          echo "🕒 Finished: $(date)"
+          echo "======================================="
