@@ -1,0 +1,103 @@
+name: 🚀 CROSS REPO TAG CREATOR (PRODUCT SERVICE)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_tag:
+        description: "Create & push new tag to backend-auth-service?"
+        required: true
+        default: "no"
+        type: choice
+        options:
+          - "no"
+          - "yes"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ==========================================
+      # 📥 CHECKOUT TARGET REPO (IMPORTANT)
+      # ==========================================
+      - name: 📥 Checkout Product Service Repo
+        uses: actions/checkout@v4
+        with:
+          repository: 9394113857/backend-product-service
+          token: ${{ secrets.PRODUCT_TOKEN }}
+          fetch-depth: 0
+
+      # ==========================================
+      # 🔄 FETCH TAGS
+      # ==========================================
+      - name: 🔄 Fetch Tags
+        run: git fetch --tags
+
+      # ==========================================
+      # 🧠 CALCULATE NEXT TAG
+      # ==========================================
+      - name: 🧠 Calculate Next Tag
+        id: tagger
+        run: |
+          echo "Getting latest tag..."
+
+          latest_tag=$(git tag --sort=-v:refname | head -n 1)
+
+          if [ -z "$latest_tag" ]; then
+            echo "No tags found, defaulting to v1.0.0"
+            latest_tag="v1.0.0"
+          fi
+
+          echo "Latest tag: $latest_tag"
+
+          version=${latest_tag#v}
+
+          IFS='.' read -r major minor patch <<< "$version"
+
+          major=${major:-1}
+          minor=${minor:-0}
+          patch=${patch:-0}
+
+          patch=$((patch + 1))
+
+          new_tag="v$major.$minor.$patch"
+
+          echo "New tag: $new_tag"
+
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      # ==========================================
+      # ❌ SKIP IF NO
+      # ==========================================
+      - name: ❌ Skip Tag
+        if: ${{ github.event.inputs.confirm_tag != 'yes' }}
+        run: echo "User selected NO ❌ — skipping"
+
+      # ==========================================
+      # 🔐 SET PRODUCT REMOTE (CRITICAL STEP)
+      # ==========================================
+      - name: 🔐 Set Authenticated Remote
+        if: ${{ github.event.inputs.confirm_tag == 'yes' }}
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.PRODUCT_TOKEN }}@github.com/9394113857/backend-product-service.git
+
+      # ==========================================
+      # 🏷️ CREATE & PUSH TAG
+      # ==========================================
+      - name: 🏷️ Create & Push Tag
+        if: ${{ github.event.inputs.confirm_tag == 'yes' }}
+        run: |
+          TAG=${{ steps.tagger.outputs.new_tag }}
+
+          echo "Creating tag: $TAG"
+
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git tag $TAG
+          git push origin $TAG
+
+          echo "✅ SUCCESS: $TAG pushed to backend-product-service 🚀"
