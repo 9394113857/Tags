@@ -1,4 +1,5 @@
-name: 🚀 CROSS REPO TAG CREATOR (AUTH SERVICE)
+# name: 🚀 CROSS REPO TAG CREATOR (AUTH SERVICE)
+name: 🚀 AUTH TAG CREATOR
 
 on:
   workflow_dispatch:
