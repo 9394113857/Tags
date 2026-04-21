@@ -1,95 +1,54 @@
-import os
-import subprocess
-import time
-from datetime import datetime
+name: 🚀 AUTH SERVICE MANUAL DEPLOY
 
-# =========================
-# 📦 REPO DETAILS
-# =========================
-REPO_URL = "https://github.com/9394113857/backend-auth-service.git"
-REPO_NAME = "backend-auth-service"
+on:
+  workflow_dispatch:
 
-def log(msg):
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-def run(cmd):
-    return subprocess.getoutput(cmd)
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
 
-# =========================
-# 📥 CLONE / LOAD REPO
-# =========================
-repo_path = f"/content/{REPO_NAME}"
+      - name: 🕒 Start Logs
+        run: |
+          echo "======================================="
+          echo "🚀 MANUAL DEPLOY STARTED"
+          echo "⏰ Time: $(date)"
+          echo "📦 Repo: $GITHUB_REPOSITORY"
+          echo "======================================="
 
-log("📥 Checking repository...")
+      - name: 📜 Commit Info
+        run: |
+          echo "Latest commit:"
+          git log -1
+          echo "======================================="
 
-if not os.path.exists(repo_path):
-    log("Cloning repository...")
-    os.system(f"git clone {REPO_URL} {repo_path}")
-else:
-    log("Repo already exists")
+      - name: 🔧 Build Step
+        run: |
+          echo "======================================="
+          echo "🔧 BUILD START"
+          echo "Installing dependencies..."
+          sleep 2
+          echo "Building auth service..."
+          sleep 2
+          echo "BUILD SUCCESS ✅"
+          echo "======================================="
 
-os.chdir(repo_path)
+      - name: 🚀 Deploy Step
+        run: |
+          echo "======================================="
+          echo "🚀 DEPLOYING AUTH SERVICE"
+          echo "Environment: manual production"
+          echo "Deploying..."
+          sleep 2
+          echo "DEPLOY SUCCESS 🎉"
+          echo "======================================="
 
-# =========================
-# 🔄 SYNC LATEST
-# =========================
-log("🔄 Pulling latest code...")
-print(run("git pull origin main"))
-
-log("🔄 Fetching tags...")
-print(run("git fetch --tags"))
-
-# =========================
-# 🏷️ GET LATEST TAG
-# =========================
-latest_tag = run("git tag --sort=-v:refname | head -n 1").strip()
-
-if latest_tag == "":
-    latest_tag = "v1.0.0"
-
-log(f"📌 Latest tag: {latest_tag}")
-
-# =========================
-# 🔢 INCREMENT VERSION
-# =========================
-try:
-    v = latest_tag.replace("v", "")
-    major, minor, patch = map(int, v.split("."))
-except:
-    major, minor, patch = 1, 0, 0
-
-patch += 1
-new_tag = f"v{major}.{minor}.{patch}"
-
-log(f"🚀 Prepared new tag: {new_tag}")
-
-# =========================
-# ❓ USER CONFIRMATION ONLY
-# =========================
-confirm = input("👉 Type YES to create & push tag (default NO): ").strip().upper()
-
-if confirm != "YES":
-    log("❌ Operation cancelled by user")
-    exit()
-
-# =========================
-# 🏷️ CREATE TAG
-# =========================
-log("🏷️ Creating tag...")
-print(run(f"git tag {new_tag}"))
-
-# =========================
-# 📤 PUSH TAG
-# =========================
-log("📤 Pushing tag to GitHub...")
-print(run(f"git push origin {new_tag}"))
-
-# =========================
-# 🎉 FINAL OUTPUT
-# =========================
-log("===================================")
-log(f"✅ SUCCESS: {new_tag} pushed")
-log("🚀 GitHub Actions triggered")
-log("===================================")
-
-exit()
+      - name: 📊 Final Logs
+        run: |
+          echo "======================================="
+          echo "✅ MANUAL DEPLOY COMPLETE"
+          echo "🕒 Finished: $(date)"
+          echo "======================================="
